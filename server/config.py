@@ -34,11 +34,11 @@ def get_env(env: str, default_value: Any = None) -> Any:
 
 
 class BaseConfig:
-    HOST_NAME = get_env("HOST_NAME")
-    PORT = get_env("PORT")
-    USER = get_env("USER")
-    AUTH = get_env("AUTH")
-    PASSWORD = get_env("PASSWORD")
+    HIVE_HOST_NAME = get_env("HIVE_HOST_NAME")
+    HIVE_PORT = get_env("HIVE_PORT")
+    HIVE_USER = get_env("HIVE_USER")
+    HIVE_AUTH = get_env("HIVE_AUTH")
+    HIVE_PASSWORD = get_env("HIVE_PASSWORD")
 
 
 class DevelopmentConfig(BaseConfig):

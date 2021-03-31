@@ -1,6 +1,5 @@
 import os
 from logging.config import dictConfig
-from config import get_env
 from odd_contract import init_flask_app, init_controller
 from controllers import OpenDataDiscoveryController
 from adapter import HiveAdapter
@@ -29,14 +28,14 @@ def create_app(conf):
     app = init_flask_app()
     app.config.from_object(conf)
     hive_adapter = HiveAdapter(
-        host_name=get_env("HOST_NAME"),
-        port=get_env("PORT"),
-        user=get_env("USER"),
-        auth=get_env("AUTH"),
-        password=get_env("PASSWORD"),
+        host_name=app.config["HIVE_HOST_NAME"],
+        port=app.config["HIVE_PORT"],
+        user=app.config["HIVE_USER"],
+        auth=app.config["HIVE_AUTH"],
+        password=app.config["HIVE_PASSWORD"],
     )
 
-    init_controller(OpenDataDiscoveryController(hive_adapter=hive_adapter))
+    init_controller(OpenDataDiscoveryController(hive_adapter=hive_adapter, unit_id=app.config["HIVE_HOST_NAME"]))
     return app
 
 
