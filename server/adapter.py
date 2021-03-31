@@ -6,21 +6,26 @@ from more_itertools import flatten
 
 from odd_contract.models import DataEntity
 
-from server.mappers.tables import map_hive_table
-from server.mappers.columns.main import map_column_stats
+from mappers.tables import map_hive_table
+from mappers.columns.main import map_column_stats
 
 
 class HiveAdapter:
-    def __init__(self, host_name: str, port: int, user: str, password: str, auth: str) -> None:
-        self._cur = hive.Connection(host=host_name,
-                                    port=port,
-                                    username=user,
-                                    password=password,
-                                    auth=auth).cursor()
+    def __init__(
+        self, host_name: str, port: int, user: str, auth: str, password: str
+    ) -> None:
+        self.host_name = host_name
+        self._cur = hive.Connection(
+            host=host_name, port=port, username=user, auth=auth, password=password
+        ).cursor()
 
     def get_datasets(self) -> Iterable[DataEntity]:
         try:
-            return list(flatten([self.__get_table_names(dn) for dn in self.__get_database_names()]))
+            return list(
+                flatten(
+                    [self.__get_table_names(dn) for dn in self.__get_database_names()]
+                )
+            )
         except KeyError:
             logging.warning("No datasets found. Returning: [].")
             return []
@@ -49,12 +54,20 @@ class HiveAdapter:
     def __process_table_raw_data(self, table_name: str) -> DataEntity:
         query = f"DESCRIBE FORMATTED {table_name}"
         self._cur.execute(query)
-        raw_table_data = self._cur.fetchall() # -> List[tuple]
+        raw_table_data = self._cur.fetchall()  # -> List[tuple]
         clean_column_names = self.__get_column_names(table_name)
-        unmapped_column_stats = [(self.__get_stats_for_columns(column_name, table_name))
-                                 for column_name in clean_column_names] # -> List[Dict[str: Any]]
+        unmapped_column_stats = [
+            (self.__get_stats_for_columns(column_name, table_name))
+            for column_name in clean_column_names
+        ]  # -> List[Dict[str: Any]]
         column_stats = map_column_stats(unmapped_column_stats)
-        return map_hive_table(raw_table_data, unmapped_column_stats, column_stats, table_name)
+        return map_hive_table(
+            self.host_name,
+            raw_table_data,
+            unmapped_column_stats,
+            column_stats,
+            table_name,
+        )
 
     def __get_column_names(self, table_name: str) -> List[str]:
         """
@@ -69,9 +82,9 @@ class HiveAdapter:
             logging.warning("No column names found. Returning: [].")
             return []
 
-    def __get_stats_for_columns(self,
-                                column_name: str,
-                                table_name: [Any]) -> Dict[str, Any]:
+    def __get_stats_for_columns(
+        self, column_name: str, table_name: [Any]
+    ) -> Dict[str, Any]:
         """
         :return: {'# col_name': 'airline_name', 'data_type': 'string',
         'min': '', 'max': '', 'num_nulls': '0', 'distinct_count': '290',

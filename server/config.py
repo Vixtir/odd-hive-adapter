@@ -2,19 +2,20 @@ import os
 from typing import Any
 
 LOG_CONFIG = {
-    'version': 1,
-    'formatters': {'default': {
-        'format': '[%(asctime)s] %(levelname)s in %(module)s [%(processName)s]: %(message)s',
-    }},
-    'handlers': {'wsgi': {
-        'class': 'logging.StreamHandler',
-        'stream': 'ext://flask.logging.wsgi_errors_stream',
-        'formatter': 'default'
-    }},
-    'root': {
-        'level': 'INFO',
-        'handlers': ['wsgi']
-    }
+    "version": 1,
+    "formatters": {
+        "default": {
+            "format": "[%(asctime)s] %(levelname)s in %(module)s [%(processName)s]: %(message)s",
+        }
+    },
+    "handlers": {
+        "wsgi": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://flask.logging.wsgi_errors_stream",
+            "formatter": "default",
+        }
+    },
+    "root": {"level": "INFO", "handlers": ["wsgi"]},
 }
 
 
@@ -33,11 +34,11 @@ def get_env(env: str, default_value: Any = None) -> Any:
 
 
 class BaseConfig:
-    HOST_NAME = get_env('HOST_NAME')
-    PORT = get_env('PORT')
-    USER = get_env('USER')
-    PASSWORD = get_env('PASSWORD')
-    AUTH = get_env('AUTH')
+    HOST_NAME = get_env("HOST_NAME")
+    PORT = get_env("PORT")
+    USER = get_env("USER")
+    AUTH = get_env("AUTH")
+    PASSWORD = get_env("PASSWORD")
 
 
 class DevelopmentConfig(BaseConfig):
