@@ -12,12 +12,14 @@ from mappers.columns.main import map_column_stats
 
 class HiveAdapter:
     def __init__(
-        self, host_name: str, port: int, user: str, auth: str, password: str
+        self, host_name: str, auth: str, port=10000, user=None, password=None
     ) -> None:
         self.host_name = host_name
-        self._cur = hive.Connection(
-            host=host_name, port=port, username=user, auth=auth, password=password
-        ).cursor()
+        if user and password:
+            self._cur = hive.Connection(
+                host=host_name, auth=auth, user=user, password=password, port=port
+            ).cursor()
+        self._cur = hive.Connection(host=host_name, auth=auth, port=port).cursor()
 
     def get_datasets(self) -> Iterable[DataEntity]:
         try:
@@ -93,7 +95,17 @@ class HiveAdapter:
         """
         query = f"DESCRIBE FORMATTED {table_name} {column_name}"
         # TODO check "date" and "array" column formats
-        self._cur.execute(query)
-        pre_result = self._cur.fetchall()
-        zipped = dict(zip(pre_result[0], pre_result[2]))
+        if column_name == "date" or column_name == "cast":
+            zipped = {}
+        else:
+            self._cur.execute(query)
+            pre_result = self._cur.fetchall()
+            zipped = dict(zip(pre_result[0], pre_result[2]))
         return {k.strip(): v for k, v in zipped.items()}
+
+        # query = f"DESCRIBE FORMATTED {table_name} {column_name}"
+        # # TODO check "date" and "array" column formats
+        # self._cur.execute(query)
+        # pre_result = self._cur.fetchall()
+        # zipped = dict(zip(pre_result[0], pre_result[2]))
+        # return {k.strip(): v for k, v in zipped.items()}

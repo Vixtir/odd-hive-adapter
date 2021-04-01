@@ -14,7 +14,7 @@ class OpenDataDiscoveryController(ODDController):
 
     encoder = JSONEncoder()
 
-    def get_data_entities(self):
+    def get_data_entities(self, changed_since=None):
         datasets = self._hive_adapter.get_datasets()
         return Response(
             response=self.encoder.encode(

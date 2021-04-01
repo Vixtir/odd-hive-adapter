@@ -1,7 +1,7 @@
 ## OpenDataDiscovery Hive adapter
 * [Requirements](#requirements)
-* [Test Hadoop cluster](#test_hadoop_cluster)
-* [ENV variables](#env_variables)
+* [Test Hadoop cluster](#test-hadoop-cluster)
+* [ENV variables](#env-variables)
 * [Dataset structure example](#dataset-structure-example)
 * [Metadata structure example](#metadata-structure-example)
 * [Fieldlist structure example](#fieldlist-structure-example)
@@ -10,33 +10,49 @@
 ## Requirements 
 * --extra-index-url https://test.pypi.org/simple/
 * future==0.18.2
-* PyHive==0.6.3
+* PyHive==0.5.0
+* sasl==0.2.1
+* thrift==0.10.0
+* thrift-sasl==0.3.0
 * python-dateutil==2.8.1
 * six==1.15.0
-* thrift==0.13.0
-* thrift-sasl==0.4.2
-* sasl==0.2.1
 * flask==1.1.2
 * gunicorn===20.0.4
 * odd-contract-dev==0.0.22
 * more-itertools==8.6.0
 * lark-parser==0.11.1
 
-NOTE: is case of troubles with sasl package installation, try with ```conda install sasl``` 
+NOTE: is case of troubles with sasl package installation locally, try with ```conda install sasl``` 
 
 ## Test Hadoop cluster
-Docker file to set up test Hadoop cluster with Hive:
+Docker-compose file to set up test Hadoop cluster with Hive:
 https://github.com/tech4242/docker-hadoop-hive-parquet
+
+Update configuration in hive-site.xml with NOSASL authentication:
+```
+<property><name> hive.server2.authentication</name><value>NOSASL</value></property>
+```
+
+Add HIVE-ODD app to this docker-compose:
+```
+  hive-odd:
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000 hive-server:10000"
+    env_file:
+      - ./hive-adapter/server/.env
+    ports:
+      - "8080:8080"
+    build: hive-adapter/
+    command: flask run
+```
 
 
 ## ENV variables
 ```
-HOST_NAME="localhost"
-PORT=10000
-USER="hive"
-PASSWORD="hive"
-AUTH="CUSTOM"
+HIVE_HOST_NAME=host.docker.internal
+HIVE_AUTH=NOSASL
 ```
+NOTE: works for test Hadoop cluster with bounded HIVE-ODD app in docker-compose
 
 ## Dataset structure example:
 ```
