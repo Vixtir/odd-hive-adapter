@@ -79,7 +79,7 @@ class HiveAdapter:
             query = f"SHOW COLUMNS IN {table_name}"
             self._cur.execute(query)
             raw_column_names = self._cur.fetchall()
-            return [cn[0] for cn in raw_column_names]
+            return list(flatten(raw_column_names))
         except KeyError:
             logging.warning("No column names found. Returning: [].")
             return []
@@ -94,18 +94,10 @@ class HiveAdapter:
         'num_trues': '', 'num_falses': '', 'comment': 'from deserializer'}
         """
         query = f"DESCRIBE FORMATTED {table_name} {column_name}"
-        # TODO check "date" and "array" column formats
-        if column_name == "date" or column_name == "cast":
-            zipped = {}
-        else:
-            self._cur.execute(query)
-            pre_result = self._cur.fetchall()
-            zipped = dict(zip(pre_result[0], pre_result[2]))
-        return {k.strip(): v for k, v in zipped.items()}
-
-        # query = f"DESCRIBE FORMATTED {table_name} {column_name}"
-        # # TODO check "date" and "array" column formats
-        # self._cur.execute(query)
-        # pre_result = self._cur.fetchall()
-        # zipped = dict(zip(pre_result[0], pre_result[2]))
-        # return {k.strip(): v for k, v in zipped.items()}
+        self._cur.execute(query)
+        pre_result = self._cur.fetchall()
+        try:
+            return {i[0]: i[1] for i in pre_result}
+        except AttributeError:
+            logging.warning("No stats found. Returning: {}.")
+            return {}

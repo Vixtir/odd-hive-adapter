@@ -9,9 +9,10 @@ from mappers.columns.main import map_column
 from mappers.oddrn import get_table_oddrn, get_owner_oddrn
 
 HIVE_DATABASE_FIELD = "Database:           "
-HIVE_OWNER_FIELD = "Owner:              "
+HIVE_OWNER_FIELD = "OwnerType:"
 HIVE_CREATETIME_FIELD = "CreateTime:         "
-HIVE_NUMROWS_FIELD = "numRows             "
+HIVE_NUMROWS_FIELD = "numRows"
+HIVE_COLUMN_NAME = "col_name"
 
 
 def map_hive_table(
@@ -80,7 +81,7 @@ def __get_value(raw_table_data, row_value) -> str:
 
 def __get_one_stat(column_stats, column_data) -> Dict[str, Any]:
     try:
-        return next(i[1] for i in column_stats if i[0] == column_data["# col_name"])
+        return next(i[1] for i in column_stats if i[0] == column_data[HIVE_COLUMN_NAME])
     except (StopIteration, KeyError):
         logging.warning(
             "There was an exception raised during " "getting data for the column. "

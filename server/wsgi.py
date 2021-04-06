@@ -3,6 +3,9 @@ from logging.config import dictConfig
 from odd_contract import init_flask_app, init_controller
 from controllers import OpenDataDiscoveryController
 from adapter import HiveAdapter
+from cache import HiveDataCache
+from scheduler import Scheduler
+from flask import Response
 
 dictConfig(
     {
@@ -27,15 +30,24 @@ dictConfig(
 def create_app(conf):
     app = init_flask_app()
     app.config.from_object(conf)
-    hive_adapter = HiveAdapter(
-        host_name=app.config["HIVE_HOST_NAME"],
-        port=app.config["HIVE_PORT"],
-        user=app.config["HIVE_USER"],
-        auth=app.config["HIVE_AUTH"],
-        password=app.config["HIVE_PASSWORD"],
-    )
+    app.add_url_rule('/health', "healthcheck", lambda: Response(status=200))
 
-    init_controller(OpenDataDiscoveryController(hive_adapter=hive_adapter, unit_id=app.config["HIVE_HOST_NAME"]))
+    hive_data_cache = HiveDataCache()
+
+    init_controller(OpenDataDiscoveryController(hive_data_cache=hive_data_cache,
+                                                unit_id=app.config["HIVE_HOST_NAME"]))
+
+    with app.app_context():
+        Scheduler(
+            hive_adapter=HiveAdapter(
+                host_name=app.config["HIVE_HOST_NAME"],
+                port=app.config["HIVE_PORT"],
+                user=app.config["HIVE_USER"],
+                auth=app.config["HIVE_AUTH"],
+                password=app.config["HIVE_PASSWORD"]),
+            hive_data_cache=hive_data_cache
+        ).start_scheduler(interval_minutes=int(app.config['SCHEDULER_TIMEOUT_MINUTES']))
+
     return app
 
 

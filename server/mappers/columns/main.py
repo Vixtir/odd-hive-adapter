@@ -7,6 +7,11 @@ from lark import Lark, LarkError
 from .field_stat_schema import FIELD_TYPE_SCHEMA
 from .hive_field_type_transformer import HiveFieldTypeTransformer
 
+HIVE_FIELD_NAME = "field_name"
+HIVE_COLUMN_NAME = "col_name"
+HIVE_DATA_TYPE = "data_type"
+
+
 hive_field_type_transformer = HiveFieldTypeTransformer()
 parser = Lark.open(
     "hive_field_type_grammar.lark", rel_to=__file__, parser="lalr", start="type"
@@ -70,11 +75,11 @@ def __map_column_stat(raw_column_stat: Dict[str, Any]) -> (str, Dict[str, Any]):
     # TODO warning: parsing string and deleting contents of parentheses to
     #  get only varchar, char, decimal (i.e. not char(10), etc.)
     try:
-        column_type_value = re.sub(r"\([^)]*\)", "", raw_column_stat["data_type"])
+        column_type_value = re.sub(r"\([^)]*\)", "", raw_column_stat[HIVE_DATA_TYPE])
         statistics_data = FIELD_TYPE_SCHEMA[column_type_value]
         mapper_fn = statistics_data["mapper"]
-        return raw_column_stat["# col_name"], {
-            statistics_data["field_name"]: mapper_fn(raw_column_stat)
+        return raw_column_stat[HIVE_COLUMN_NAME], {
+            statistics_data[HIVE_FIELD_NAME]: mapper_fn(raw_column_stat)
         }
     except KeyError:
         return None, {}
@@ -89,19 +94,19 @@ def map_column(
     raw_column_data: Dict[str, Any], table_oddrn: str, stats: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
     try:
-        column_type_value = re.sub(r"\([^)]*\)", "", raw_column_data["data_type"])
+        column_type_value = re.sub(r"\([^)]*\)", "", raw_column_data[HIVE_DATA_TYPE])
         type_parsed = __parse(column_type_value)
 
         return __map_column(
             table_oddrn=table_oddrn,
-            column_name=raw_column_data["# col_name"],
+            column_name=raw_column_data[HIVE_COLUMN_NAME],
             stats=stats,
             type_parsed=type_parsed,
         )
     except (LarkError, KeyError) as e:
         logging.warning(
             "There was an error during type parsing. "
-            f'Column data: "{raw_column_data}". '
+            f'Column data: "{raw_column_data[HIVE_DATA_TYPE]}". '
             f'Table oddrn: "{table_oddrn}". '
             f'Reason: "{e}"'
         )

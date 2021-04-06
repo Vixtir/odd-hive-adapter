@@ -36,9 +36,10 @@ def get_env(env: str, default_value: Any = None) -> Any:
 class BaseConfig:
     HIVE_HOST_NAME = get_env("HIVE_HOST_NAME")
     HIVE_PORT = get_env("HIVE_PORT")
-    HIVE_USER = get_env("HIVE_USER")
+    HIVE_USER = get_env("HIVE_USER") or None
     HIVE_AUTH = get_env("HIVE_AUTH")
-    HIVE_PASSWORD = get_env("HIVE_PASSWORD")
+    HIVE_PASSWORD = get_env("HIVE_PASSWORD") or None
+    SCHEDULER_TIMEOUT_MINUTES = get_env("SCHEDULER_TIMEOUT_MINUTES", 1)
 
 
 class DevelopmentConfig(BaseConfig):
