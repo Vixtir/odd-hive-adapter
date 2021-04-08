@@ -6,10 +6,7 @@ from lark import Lark, LarkError
 
 from .field_stat_schema import FIELD_TYPE_SCHEMA
 from .hive_field_type_transformer import HiveFieldTypeTransformer
-
-HIVE_FIELD_NAME = "field_name"
-HIVE_COLUMN_NAME = "col_name"
-HIVE_DATA_TYPE = "data_type"
+from mappers.consts import HIVE_FIELD_NAME, HIVE_COLUMN_NAME, HIVE_DATA_TYPE
 
 
 hive_field_type_transformer = HiveFieldTypeTransformer()

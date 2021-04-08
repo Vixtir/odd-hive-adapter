@@ -1,15 +1,14 @@
 import logging
 from typing import Any, Dict, Set, List
+from mappers.consts import HIVE_DETAILED_TABLE_INFO_FIELD, \
+    HIVE_TABLE_PARAMETERS_FIELD, \
+    HIVE_STORAGE_INFORMATION_FIELD,\
+    HIVE_STORAGE_DESC_PARAMS_FIELD
 
 SCHEMA_FILE_URL = (
     "https://raw.githubusercontent.com/opendatadiscovery/"
     "opendatadiscovery-specification/main/specification/extensions/hive.json"
 )
-
-HIVE_DETAILED_TABLE_INFO_FIELD = "# Detailed Table Information"
-HIVE_TABLE_PARAMETERS_FIELD = "Table Parameters:"
-HIVE_STORAGE_INFORMATION_FIELD = "# Storage Information"
-HIVE_STORAGE_DESC_PARAMS_FIELD = "Storage Desc Params:"
 
 
 class MetadataExtractor:

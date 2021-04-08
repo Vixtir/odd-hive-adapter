@@ -7,12 +7,8 @@ from odd_contract.models import DataEntity
 from mappers.metadata import MetadataExtractor
 from mappers.columns.main import map_column
 from mappers.oddrn import get_table_oddrn, get_owner_oddrn
-
-HIVE_DATABASE_FIELD = "Database:           "
-HIVE_OWNER_FIELD = "OwnerType:"
-HIVE_CREATETIME_FIELD = "CreateTime:         "
-HIVE_NUMROWS_FIELD = "numRows"
-HIVE_COLUMN_NAME = "col_name"
+from mappers.consts import HIVE_DATABASE_FIELD, HIVE_OWNER_FIELD, \
+    HIVE_CREATETIME_FIELD, HIVE_NUMROWS_FIELD, HIVE_COLUMN_NAME
 
 
 def map_hive_table(
@@ -75,6 +71,7 @@ def __get_value(raw_table_data, row_value) -> str:
         logging.warning(
             "There was an error during getting value for row. "
             f'Value of "{row_value}" is not found.'
+            f'Returning "None".'
         )
         return None
 
