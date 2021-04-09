@@ -30,7 +30,7 @@ iterable_type: ("array"i | "set"i) "<" (type) ">"
 
 struct_type: "struct"i "<" [field_definition ("," field_definition)*]+ ">"
 
-union_type: "union"i "<" [type ("," type)*] ">"
+union_type: "uniontype"i "<" [type ("," type)*] ">"
 
 map_type: "map"i "<" type "," type ">"
 

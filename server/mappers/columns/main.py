@@ -33,7 +33,7 @@ TYPES_HIVE_TO_ODD = {
     "array": "TYPE_LIST",
     "map": "TYPE_MAP",
     "struct": "TYPE_STRUCT",
-    "uniontype": "TYPE_UNION",
+    "union": "TYPE_UNION",
 }
 
 

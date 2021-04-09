@@ -3,7 +3,7 @@ from lark import Transformer, Token
 
 class HiveFieldTypeTransformer(Transformer):
     def field_definition(self, items):
-        return items[1] | {"field_name": str(items[0])}
+        return items[1] or {"field_name": str(items[0])}
 
     def type(self, items):
         obj = items[0]
