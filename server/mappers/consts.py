@@ -21,6 +21,8 @@ HIVE_MAX_LEN = "max_col_len"
 HIVE_AVG_LEN = "avg_col_len"
 HIVE_TRUE_COUNT = "num_trues"
 HIVE_FALSE_COUNT = "num_falses"
+HIVE_BIT_VECTOR = "bitVector"
+HIVE_COMMENT = "comment"
 
 # main.py
 HIVE_FIELD_NAME = "field_name"
