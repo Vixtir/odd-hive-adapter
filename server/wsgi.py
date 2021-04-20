@@ -6,6 +6,7 @@ from adapter import HiveAdapter
 from cache import HiveDataCache
 from scheduler import Scheduler
 from flask import Response
+from flask_compress import Compress
 
 dictConfig(
     {
@@ -31,6 +32,8 @@ def create_app(conf):
     app = init_flask_app()
     app.config.from_object(conf)
     app.add_url_rule('/health', "healthcheck", lambda: Response(status=200))
+
+    Compress().init_app(app)
 
     hive_data_cache = HiveDataCache()
 
