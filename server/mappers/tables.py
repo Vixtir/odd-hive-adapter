@@ -1,86 +1,52 @@
 import logging
-from typing import Dict, Any, List, Tuple, Iterable
-
+from typing import Dict, Any, List, Iterable
+from datetime import datetime
 from more_itertools import flatten
 from odd_contract.models import DataEntity
-
-from mappers.metadata import MetadataExtractor
+from mappers.metadata import _metadata
 from mappers.columns.main import map_column
 from mappers.oddrn import get_table_oddrn, get_owner_oddrn
-from mappers.consts import HIVE_DATABASE_FIELD, HIVE_OWNER_FIELD, \
-    HIVE_CREATETIME_FIELD, HIVE_NUMROWS_FIELD, HIVE_COLUMN_NAME
+from mappers import TableNamedTuple, ColumnsNamedTuple, StatsNamedTuple
 
 
-def map_hive_table(
-    host_name: str,
-    raw_table_data: List[Tuple[str]],
-    unmapped_column_stats: List[Dict[str, Any]],
-    column_stats: Iterable[Tuple[str, Dict[str, Any]]],
-    table_name: str,
-) -> DataEntity:
-    database_name = __get_value(raw_table_data, HIVE_DATABASE_FIELD)
-    created_at = __get_value(raw_table_data, HIVE_CREATETIME_FIELD)
-    owner = __get_value(raw_table_data, HIVE_OWNER_FIELD)
-
-    table_oddrn = get_table_oddrn(database_name, table_name)
-    owner_oddrn = get_owner_oddrn(host_name, owner)
-
-    columns = flatten(
-        [
-            map_column(
-                column_data, table_oddrn, __get_one_stat(column_stats, column_data)
-            )
-            for column_data in unmapped_column_stats
-        ]
-    )
-    mt = MetadataExtractor()
-
+def map_hive_table(host_name: str, table_stats, columns: dict, stats: List[StatsNamedTuple] = None) -> DataEntity:
+    table_oddrn = get_table_oddrn(table_stats.dbName, table_stats.tableName)
+    owner_oddrn = get_owner_oddrn(host_name, table_stats.owner)
+    created_at = f'{datetime.fromtimestamp(table_stats.createTime)}'
+    updated_at = f'{datetime.fromtimestamp(table_stats.lastAccessTime)}'
+    columns_mapping = list(flatten([map_column(c_name, c_type, table_oddrn, __get_stats(c_name, stats))
+                                    for c_name, c_type in columns.items()]))
     try:
         result = DataEntity.from_dict(
             {
                 "oddrn": table_oddrn,
-                "name": table_name,
+                "name": table_stats.tableName,
                 "owner": owner_oddrn,
-                "updated_at": None,
+                "updated_at": updated_at,
                 "created_at": created_at,
-                "metadata": [mt.extract_dataset_metadata(raw_table_data)],
+                "metadata": [_metadata(table_stats)],
                 "dataset": {
                     "parent_oddrn": None,
                     "description": None,
                     "subtype": "DATASET_TABLE",
-                    "rows_number": __get_value(raw_table_data, HIVE_NUMROWS_FIELD),
-                    "field_list": list(columns),
+                    "rows_number": table_stats.parameters.get('numRows', None),
+                    "field_list": columns_mapping or [],
                 },
             }
         )
         return result
-    except (TypeError, KeyError):
-        logging.warning(
-            "Problems with DataEntity JSON serialization. " "Returning: {}."
-        )
+    except Exception as e:
+        logging.warning(f"Can't build DataEntity for '{table_stats.tableName}' in '{table_stats.dbName}' database. "
+                        f"Exception raised: {e}")
         return {}
 
 
-def __get_value(raw_table_data, row_value) -> str:
+def __get_stats(c_name: str, stats):
     try:
-        value = next(
-            i[i.index(j) + 1] for i in raw_table_data for j in i if j == row_value
-        )
-        return value.strip()
-    except StopIteration:
-        logging.warning(
-            "There was an error during getting value for row. "
-            f'Value of "{row_value}" is not found.'
-            f'Returning "None".'
-        )
-        return None
-
-
-def __get_one_stat(column_stats, column_data) -> Dict[str, Any]:
-    try:
-        return next(i[1] for i in column_stats if i[0] == column_data[HIVE_COLUMN_NAME])
-    except (StopIteration, KeyError):
-        logging.warning(
-            "There was an exception raised during " "getting data for the column. "
-        )
+        if stats:
+            result = next(i[1] for i in stats if c_name == i[0])
+            print(f' __get_stats {result}')
+            return result
+    except (StopIteration, TypeError, KeyError):
+        logging.info(f"There was an exception raised when extracting column stats for '{c_name}'.")
         return None

@@ -14,13 +14,12 @@ class Scheduler:
 
     def start_scheduler(self, interval_minutes: int):
         self.__scheduler.start()
-        logging.info(
-            f"Scheduler started")
+        logging.info(f"Scheduler started")
         self.__scheduler.add_job(self.__retrieve_data_entities_data,
                                  trigger='interval',
                                  minutes=interval_minutes,
                                  next_run_time=datetime.utcnow())
 
     def __retrieve_data_entities_data(self):
-        self.__hive_data_cache\
+        self.__hive_data_cache \
             .cache_data_entities(self.__hive_adapter.get_datasets())

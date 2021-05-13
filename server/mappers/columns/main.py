@@ -1,18 +1,13 @@
 import re
 import logging
-from typing import List, Tuple, Dict, Any, Iterable
-
 from lark import Lark, LarkError
-
+from typing import List, Tuple, Dict, Any, Iterable
 from .field_stat_schema import FIELD_TYPE_SCHEMA
 from .hive_field_type_transformer import HiveFieldTypeTransformer
-from mappers.consts import HIVE_FIELD_NAME, HIVE_COLUMN_NAME, HIVE_DATA_TYPE
 
 
 hive_field_type_transformer = HiveFieldTypeTransformer()
-parser = Lark.open(
-    "hive_field_type_grammar.lark", rel_to=__file__, parser="lalr", start="type"
-)
+parser = Lark.open("hive_field_type_grammar.lark", rel_to=__file__, parser="lalr", start="type")
 
 TYPES_HIVE_TO_ODD = {
     "int": "TYPE_INTEGER",
@@ -37,9 +32,7 @@ TYPES_HIVE_TO_ODD = {
 }
 
 
-def map_column_stats(
-    unmapped_column_stats: List[Dict[str, Any]]
-) -> Iterable[Tuple[str, Dict[str, Any]]]:
+def map_column_stats(unmapped_column_stats: List[Dict[str, Any]]) -> Iterable[Tuple[str, Dict[str, Any]]]:
     """
     :return: [('airline_name', {
                          'string_stats': {
@@ -47,37 +40,26 @@ def map_column_stats(
                                         'avg_length': 2.3),
                                         'nulls_count': 0),
                                         'unique_count': 24)
-                                        }}),
-     ('release_year', {
-                        'string_stats': {
-                                        'max_length': 4),
-                                        'avg_length': 2.3),
-                                        'nulls_count': 0),
-                                        'unique_count': 24)
-                                        }})
-                                         ]
+                                        }}), (...), ]
     """
-    return [
-        __map_column_stat(raw_column_stat) for raw_column_stat in unmapped_column_stats
-    ]
+    return [__map_column_stat(raw_column_stat.statsObj)
+            for raw_column_stat in unmapped_column_stats]
 
 
 def __map_column_stat(raw_column_stat: Dict[str, Any]) -> (str, Dict[str, Any]):
-    """
-    :return: {'# col_name': 'airline_name', 'data_type': 'string',
-    'min': '', 'max': '', 'num_nulls': '0', 'distinct_count': '290',
-    'avg_col_len': '15.347568578553616', 'max_col_len': '38',
-    'num_trues': '', 'num_falses': '', 'comment': 'from deserializer'}
-    """
-    # TODO warning: parsing string and deleting contents of parentheses to
-    #  get only varchar, char, decimal (i.e. not char(10), etc.)
+    # Parsing string and deleting contents of parentheses to
+    # get only varchar, char, decimal (i.e. not char(10), etc.)
     try:
-        column_type_value = re.sub(r"\([^)]*\)", "", raw_column_stat[HIVE_DATA_TYPE])
+        column_name = next(c.colName for c in raw_column_stat if c.colName)
+        column_type = next(c.colType for c in raw_column_stat if c.colType)
+        stats_data = next(c.statsData for c in raw_column_stat if c.statsData)
+        column_type_value = re.sub(r"\([^)]*\)", "", column_type)
         statistics_data = FIELD_TYPE_SCHEMA[column_type_value]
         mapper_fn = statistics_data["mapper"]
-        return raw_column_stat[HIVE_COLUMN_NAME], {
-            statistics_data[HIVE_FIELD_NAME]: mapper_fn(raw_column_stat)
+        result = column_name, {
+            statistics_data["field_name"]: mapper_fn(stats_data)
         }
+        return result
     except KeyError:
         return None, {}
 
@@ -87,38 +69,28 @@ def __parse(field_type: str) -> Dict[str, Any]:
     return hive_field_type_transformer.transform(column_tree)
 
 
-def map_column(
-    raw_column_data: Dict[str, Any], table_oddrn: str, stats: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+def map_column(c_name, c_type, table_oddrn: str, stats=None) -> List[Dict[str, Any]]:
     try:
-        column_type_value = re.sub(r"\([^)]*\)", "", raw_column_data[HIVE_DATA_TYPE])
+        column_type_value = re.sub(r"\([^)]*\)", "", c_type)
         type_parsed = __parse(column_type_value)
 
         return __map_column(
             table_oddrn=table_oddrn,
-            column_name=raw_column_data[HIVE_COLUMN_NAME],
+            column_name=c_name,
             stats=stats,
             type_parsed=type_parsed,
         )
     except (LarkError, KeyError) as e:
         logging.warning(
             "There was an error during type parsing. "
-            f'Column data: "{raw_column_data[HIVE_DATA_TYPE]}". '
-            f'Table oddrn: "{table_oddrn}". '
-            f'Reason: "{e}"'
-        )
+            f'Error: "{c_name}". Table oddrn: "{table_oddrn}". '
+            f'Reason: "{e}"')
         return []
 
 
-def __map_column(
-    table_oddrn: str,
-    parent_oddrn: str = None,
-    column_name: str = None,
-    stats: Dict[str, Any] = None,
-    type_parsed: Dict[str, Any] = None,
-    is_key: bool = None,
-    is_value: bool = None,
-) -> List[Dict[str, Any]]:
+def __map_column(table_oddrn: str, parent_oddrn: str = None, column_name: str = None,
+                 stats: Dict[str, Any] = None, type_parsed: Dict[str, Any] = None,
+                 is_key: bool = None, is_value: bool = None) -> List[Dict[str, Any]]:
     result = []
     hive_type = type_parsed["type"]
     name = (

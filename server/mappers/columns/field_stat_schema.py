@@ -1,68 +1,54 @@
-import re
 from typing import Any, Dict
-from mappers.consts import HIVE_MIN, HIVE_MAX, HIVE_NULLS, \
-    HIVE_DISTINCT, HIVE_DATA_TYPE, HIVE_MAX_LEN, \
-    HIVE_AVG_LEN, HIVE_TRUE_COUNT, HIVE_FALSE_COUNT
-
-from odd_contract.models import (
-    BooleanFieldStat,
-    DateTimeFieldStat,
-    NumberFieldStat,
-    StringFieldStat,
-    BinaryFieldStat,
-)
+from odd_contract.models import (BooleanFieldStat, DateTimeFieldStat, NumberFieldStat,
+                                 StringFieldStat, BinaryFieldStat)
 
 DEFAULT_VALUE = -1
 
 
-def _mapper_numeric(raw_column_stat: Dict[str, Any]):
+def _mapper_numeric(stats_data: Dict[str, Any]):
+    columns_stat_type = stats_data.longStats or stats_data.doubleStats or stats_data.dateStats
     return {
-        "low_value": _digit_checker(raw_column_stat[HIVE_MIN], float),
-        "high_value": _digit_checker(raw_column_stat[HIVE_MAX], float),
+        "low_value": _digit_checker(columns_stat_type.lowValue, float),
+        "high_value": _digit_checker(columns_stat_type.highValue, float),
         "mean_value": None,
         "median_value": None,
-        "nulls_count": _digit_checker(raw_column_stat[HIVE_NULLS], int),
-        "unique_count": _digit_checker(raw_column_stat[HIVE_DISTINCT], int),
+        "nulls_count": _digit_checker(columns_stat_type.numNulls, int),
+        "unique_count": _digit_checker(columns_stat_type.numDVs, int),
     }
 
 
-def _mapper_decimal(raw_column_stat: Dict[str, Any]):
-    decimal_scale = re.search(r"\((.*?)\)", raw_column_stat[HIVE_DATA_TYPE]).group(1)
+def _mapper_decimal(stats_data: Dict[str, Any]):
     return {
-        "low_value": DEFAULT_VALUE
-        if (raw_column_stat[HIVE_MIN] == "")
-        else _digit_checker(raw_column_stat[HIVE_MIN], float)
-        / float(decimal_scale.replace(",", ".")),
-        "high_value": DEFAULT_VALUE
-        if (raw_column_stat[HIVE_MAX] == "")
-        else _digit_checker(raw_column_stat[HIVE_MAX], float)
-        / float(decimal_scale.replace(",", ".")),
+        "low_value": _digit_checker(stats_data.decimalStats.lowValue, int),
+        "high_value": _digit_checker(stats_data.decimalStats.highValue, int),
         "mean_value": None,
         "median_value": None,
-        "nulls_count": _digit_checker(raw_column_stat[HIVE_NULLS], int),
-        "unique_count": _digit_checker(raw_column_stat[HIVE_DISTINCT], int),
+        "nulls_count": _digit_checker(stats_data.decimalStats.numNulls, int),
+        "unique_count": _digit_checker(stats_data.decimalStats.numDVs, int),
     }
 
 
-def _mapper_bytes(raw_column_stat: Dict[str, Any]):
+def _mapper_bytes(stats_data: Dict[str, Any]):
+
+    columns_stat_type = stats_data.stringStats or stats_data.binaryStats
     return {
-        "max_length": _digit_checker(raw_column_stat[HIVE_MAX_LEN], int),
-        "avg_length": _digit_checker(raw_column_stat[HIVE_AVG_LEN], float),
-        "nulls_count": _digit_checker(raw_column_stat[HIVE_NULLS], int),
-        "unique_count": _digit_checker(raw_column_stat[HIVE_DISTINCT], int),
+        "max_length": _digit_checker(columns_stat_type.maxColLen, int),
+        "avg_length": _digit_checker(columns_stat_type.avgColLen, float),
+        "nulls_count": _digit_checker(columns_stat_type.numNulls, int),
+        "unique_count": _digit_checker(columns_stat_type.numDVs, int),
     }
 
 
-def _mapper_boolean(raw_column_stat: Dict[str, Any]):
+def _mapper_boolean(stats_data: Dict[str, Any]):
     return {
-        "true_count": _digit_checker(raw_column_stat[HIVE_TRUE_COUNT], int),
-        "false_count": _digit_checker(raw_column_stat[HIVE_FALSE_COUNT], int),
-        "nulls_count": _digit_checker(raw_column_stat[HIVE_NULLS], int),
+        "true_count": _digit_checker(stats_data.booleanStats.numTrues, int),
+        "false_count": _digit_checker(stats_data.booleanStats.numFalses, int),
+        "nulls_count": _digit_checker(stats_data.booleanStats.numNulls, int),
     }
 
 
 def _digit_checker(var, func):
-    return func(var) if var.isdigit() else DEFAULT_VALUE
+    return func(var) if var is not None else DEFAULT_VALUE
 
 
 FIELD_TYPE_SCHEMA = {

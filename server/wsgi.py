@@ -44,10 +44,7 @@ def create_app(conf):
         Scheduler(
             hive_adapter=HiveAdapter(
                 host_name=app.config["HIVE_HOST_NAME"],
-                port=app.config["HIVE_PORT"],
-                user=app.config["HIVE_USER"],
-                auth=app.config["HIVE_AUTH"],
-                password=app.config["HIVE_PASSWORD"]),
+                port=app.config["HIVE_PORT"]),
             hive_data_cache=hive_data_cache
         ).start_scheduler(interval_minutes=int(app.config['SCHEDULER_TIMEOUT_MINUTES']))
 
