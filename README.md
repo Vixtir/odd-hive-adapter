@@ -1,3 +1,5 @@
+# NOTE: Project was moved to [ODD Collector](https://github.com/opendatadiscovery/odd-collector) repository
+
 ## OpenDataDiscovery Hive adapter
 * [Requirements](#requirements)
 * [ENV variables](#env-variables)
